@@ -1,0 +1,6 @@
+{
+  "name": "PDFSmart Tools",
+  "description": "Fast, private, and free online PDF utilities running directly in your browser. Merge, split, compress, convert, rotate, and watermark PDFs designed for local processing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
