@@ -1,51 +1,61 @@
-# PDFSmart Tools - Final Pre-Launch & AdSense Checklist
+# PDFSmart Tools — Deployment & Quality Verification Checklist
 
-This checklist confirms that PDFSmart Tools is production-ready, fully functional, and ready for custom domain connection and Google AdSense application.
-
----
-
-## Part 1: Automated Verification & Build Pipeline
-- [x] **Digit Safeguard Check**: Ran `npm run check:digits` — 0 Arabic-Indic or Persian digits found across all code and text.
-- [x] **TypeScript Typecheck & Lint**: Ran `npm run lint` (`tsc --noEmit`) — Zero type errors, zero compile warnings.
-- [x] **Automated Tool Engine Test Suite**: Ran `npm run test:tools` (`scripts/test-tools-suite.ts`) — 21 test assertions passed (0 failed), validating real engine execution of Merge, Split, Rotate, Delete, Extract, Protect (128-bit encryption + auth refusal), Watermark, Word-to-PDF, PDF-to-Word (DOCX compilation), Image-to-PDF, Path Traversal Sanitization, and Page Range Validation in Node.js via custom DOM/Canvas polyfills (`scripts/polyfill-dom.ts`).
-- [x] **Full SSG Build**: Ran `npm run build` — `vite-react-ssg` generated all 28 static HTML pages cleanly.
-- [x] **SSG DOM Markup Verification**: `node prerender.js` verified that all 28 routes contain rich, pre-rendered static DOM inside `<div id="root">` (0 empty root containers).
-- [x] **Sitemap Synchronization**: `node scripts/generate-sitemap.js` verified 28 canonical URLs in `sitemap.xml` matching `robots.txt`.
+**Deployment Target:** Cloudflare Pages (`https://pdfsmart-tools.pages.dev/`)  
+**Status:** Verification Completed for Node-Executable Modules  
+**Notice:** Google AdSense acceptance cannot be guaranteed. Final approval depends on domain standing, editorial quality, and Google's discretionary review policies.
 
 ---
 
-## Part 2: Tool Functionality Verification (All 15 Tools)
-- [x] **Merge PDF**: Verified lossless multi-page combination, drag-drop ordering, and local export.
-- [x] **Split PDF**: Verified page extraction, custom range syntax (e.g. `1-3, 5`), and fixed-interval splitting.
-- [x] **Compress PDF**: Verified 3 compression presets with canvas recompression and size reduction reporting.
-- [x] **PDF to JPG**: Verified high-DPI canvas rendering with individual and ZIP batch downloads.
-- [x] **JPG to PDF**: Verified multi-image document assembly with A4/Letter sizing and margin presets.
-- [x] **PDF to Word**: Verified text extraction and `.docx` creation via `docx` library.
-- [x] **Word to PDF**: Verified Mammoth `.docx` parsing with direct ANSI embedding and Unicode canvas fallback.
-- [x] **PDF to PNG**: Verified lossless PNG export with transparency and ZIP packaging.
-- [x] **PNG to PDF**: Verified clean image-to-PDF embedding without visual distortion.
-- [x] **Rotate PDF**: Verified 90°/180°/270° orientation adjustments for all or specific pages.
-- [x] **Delete PDF Pages**: Verified page removal with safeguards against empty output.
-- [x] **Extract PDF Pages**: Verified selective page extraction into a fresh PDF.
-- [x] **Protect PDF**: Verified password encryption with `@pdfsmaller/pdf-encrypt-lite` and rejection of unauthorized access.
-- [x] **Unlock PDF**: Verified authorized password decryption and copy-restriction removal.
-- [x] **Watermark PDF**: Verified text and image stamps with opacity, rotation, and layer depth controls.
+## Part 1: Automated Validation & Pipeline Execution
+
+- [x] **Digit Safeguard Check (`npm run check:digits`)**: Verified zero Arabic-Indic (`٠-٩`) or Persian (`۰-۹`) digits across all application source code, markdown, and public assets.
+- [x] **TypeScript Verification (`npm run lint`)**: Verified 0 compiler errors or syntax defects via `tsc --noEmit`.
+- [x] **Direct Engine Test Suite (`npm run test:tools`)**: Directly imported and executed 11 core engine functions from `src/lib/pdfEngine.ts` in Node.js (32 test assertions passed, 0 failed).
+- [x] **Full SSG Production Build (`npm run build`)**: Generated all 28 static HTML routes with full DOM pre-rendered inside `<div id="root">`.
+- [x] **Sitemap & Robots Synchronization**: Generated `sitemap.xml` (28 routes) and `robots.txt` pointing to `https://pdfsmart-tools.pages.dev/sitemap.xml`.
+- [x] **Domain Migration Verification**: Zero references to obsolete preview domains in `src/`, `public/`, `dist/`, `scripts/`, or `index.html`.
 
 ---
 
-## Part 3: Trust & Regulatory Pages
-- [x] **Privacy Policy (`/privacy-policy`)**: Honest, accurate explanation of local browser processing, CDNs (Google Fonts, PDF.js unpkg), EmailJS support form data transmission, explicit declaration that no CMP/IAB TCF or active ads currently run, and limitation of warranty.
-- [x] **Terms of Service (`/terms`)**: Standard acceptable use, limitation of liability, and service conditions.
-- [x] **Cookie Policy (`/cookie-policy`)**: Comprehensive breakdown of essential, analytical, and advertising cookies.
-- [x] **Disclaimer (`/disclaimer`)**: Clear guidance regarding general utility usage and backup responsibility.
-- [x] **About Us (`/about`)**: Detailed mission statement outlining why zero-upload in-browser tools protect user privacy.
-- [x] **Contact Us (`/contact`)**: Working direct email, clipboard copy button, and operational EmailJS contact form.
+## Part 2: Tool Verification Status
+
+### A. Directly Tested in Node via `src/lib/pdfEngine.ts`
+- [x] **Merge PDF (`mergePdfs`)**: Multi-document buffer combination and page count verification.
+- [x] **Split PDF (`splitPdf`)**: Single-page and multi-page range splitting with ZIP generation.
+- [x] **Rotate PDF (`rotatePdf`)**: Rotation angle manipulation (90°, 180°, 270°).
+- [x] **Delete PDF Pages (`deletePdfPages`)**: Safe page removal with empty document prevention.
+- [x] **Extract PDF Pages (`extractPdfPages`)**: Extraction of specified page subsets.
+- [x] **Protect PDF (`protectPdf`)**: Password encryption and rejection of unauthenticated access.
+- [x] **Watermark PDF (`watermarkPdf`)**: Text watermark rendering with custom rotation and opacity.
+- [x] **Word to PDF (`wordToPdf`)**: DOCX text extraction via Mammoth and PDF generation via pdf-lib.
+- [x] **PDF to Word (`pdfToWord`)**: Multi-page text extraction and DOCX package compilation.
+- [x] **Filename Sanitization (`sanitizeFilename`)**: Traversal prevention, reserved name handling, character stripping.
+- [x] **Page Range Validation (`parseAndValidatePageRanges`)**: Range syntax parsing and bounds validation.
+
+### B. Browser Integration Tests Still Required
+The following 5 tools depend on HTML5 Canvas rendering and browser-only PDF.js Web Worker contexts and require testing in a real browser:
+- [ ] **Compress PDF (`compressPdf`)**: Canvas re-encoding & JPEG stream compression.
+- [ ] **PDF to JPG (`pdfToJpg`)**: High-DPI canvas rendering and JPEG image generation.
+- [ ] **PDF to PNG (`pdfToPng`)**: Canvas rendering with transparency preservation and PNG export.
+- [ ] **JPG/PNG to PDF (`imagesToPdf`)**: Browser `HTMLImageElement` loading, dimensions, and orientation handling.
+- [ ] **Unlock PDF (`unlockPdf`)**: Standard decryption works via pdf-lib; canvas rasterization fallback for encrypted object streams requires a browser.
 
 ---
 
-## Part 4: AdSense & Domain Readiness
-- [x] **No Fake Ads or IDs**: Clean placeholder-free code; no fake publisher IDs or invalid `ads.txt` records.
-- [x] **AdSlot Architecture**: 6 planned placements ready for live credentials in `src/components/common/AdSlot.tsx`.
-- [x] **Domain Centralization**: A single setting in `src/config/siteConfig.ts` controls all canonical tags, sitemaps, and robots directives.
-- [x] **Real Binary Assets**: `public/logo.png` (512x512) and `public/og-image.png` (1200x630) are genuine PNG files.
-- [x] **English Language Consistency**: 100% of user-facing text, error messages, and tool descriptions are in English.
+## Part 3: Canonical Domain & SEO Alignment
+
+- [x] **Domain Hierarchy**: `VITE_SITE_URL` > `SITE_URL` > `window.location.origin` > `https://pdfsmart-tools.pages.dev`.
+- [x] **Canonical Tags**: All 28 static HTML files contain `<link rel="canonical">` matching the route URL on `https://pdfsmart-tools.pages.dev`.
+- [x] **Open Graph & Metadata**: `<meta property="og:url">` and JSON-LD structured data use the canonical domain.
+- [x] **Binary Assets**: Verified valid 512x512 PNG at `public/logo.png` and 1200x630 PNG at `public/og-image.png`.
+
+---
+
+## Part 4: Trust & Transparency Pages
+
+- [x] **Privacy Policy (`/privacy-policy`)**: Clearly explains client-side local memory processing, third-party CDN assets, EmailJS form handling, and notes no active ads or CMP currently run.
+- [x] **Terms of Service (`/terms`)**: Service terms, disclaimer of warranties ("as is"), and backup guidance.
+- [x] **Cookie Policy (`/cookie-policy`)**: Explains essential, analytics, and advertising cookie categories.
+- [x] **Disclaimer (`/disclaimer`)**: Explains utility nature of tools and user backup responsibilities.
+- [x] **About Us (`/about`)**: Architectural overview of zero-upload client-side processing.
+- [x] **Contact Us (`/contact`)**: Support email address and functional contact form.

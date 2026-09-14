@@ -31,4 +31,13 @@ if (!(Map.prototype as any).getOrInsertComputed) {
   };
 }
 
+if (typeof (globalThis as any).URL !== 'undefined') {
+  if (typeof (globalThis as any).URL.createObjectURL !== 'function') {
+    (globalThis as any).URL.createObjectURL = (_blob: any) => `blob:mock-url-${Date.now()}`;
+  }
+  if (typeof (globalThis as any).URL.revokeObjectURL !== 'function') {
+    (globalThis as any).URL.revokeObjectURL = () => {};
+  }
+}
+
 

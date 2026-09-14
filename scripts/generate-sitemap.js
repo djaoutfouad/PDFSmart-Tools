@@ -7,11 +7,22 @@
 import fs from 'fs';
 import path from 'path';
 
-// Import canonical URL dynamically or from siteConfig.ts
-const siteConfigRaw = fs.readFileSync('src/config/siteConfig.ts', 'utf-8');
-const domainMatch = siteConfigRaw.match(/'https:\/\/[^']+'/);
-const defaultDomain = domainMatch ? domainMatch[0].replace(/'/g, '') : 'https://pdfsmart-tools.djaoutfouad19762321.workers.dev';
-const canonicalUrl = (process.env.VITE_SITE_URL || process.env.SITE_URL || defaultDomain).replace(/\/$/, '');
+// Determine canonical domain with precedence:
+// 1. process.env.VITE_SITE_URL
+// 2. process.env.SITE_URL
+// 3. Fallback from siteConfig.ts or default to https://pdfsmart-tools.pages.dev
+let fallbackDomain = 'https://pdfsmart-tools.pages.dev';
+try {
+  const siteConfigRaw = fs.readFileSync('src/config/siteConfig.ts', 'utf-8');
+  const domainMatches = siteConfigRaw.match(/'https:\/\/[^']+'/g);
+  if (domainMatches && domainMatches.length > 0) {
+    fallbackDomain = domainMatches[domainMatches.length - 1].replace(/'/g, '');
+  }
+} catch (e) {
+  // Use default pages.dev fallback
+}
+
+let canonicalUrl = (process.env.VITE_SITE_URL || process.env.SITE_URL || fallbackDomain).replace(/\/$/, '');
 
 console.log(`🌐 Synchronizing sitemap & robots with canonical domain: ${canonicalUrl}`);
 

@@ -1,119 +1,88 @@
-# PDFSmart Tools - Pre-AdSense Quality & Production Audit Fixes
-**Target Environment:** Cloudflare Workers / Vite React SSG / Google AI Studio  
-**Audit Date:** August 2026  
-**Auditor:** Lead Systems Architect & Senior Software Quality Engineer  
-**Status:** ALL CHECKS PASSED (100% Ready for Custom Domain Deployment & Google AdSense Review)
+# PDFSmart Tools — Technical Audit & Quality Remediation
+
+**Deployment Target:** Cloudflare Pages (`https://pdfsmart-tools.pages.dev/`)  
+**Architecture:** Vite React Static Site Generation (SSG), Client-Side WebAssembly & Web APIs  
+**Audit Date:** Updated September 2026  
+**Auditor:** Senior Software & Quality Engineer  
+**Status:** Audit & Remediation Applied (Under Continuous Review; AdSense Acceptance Cannot Be Guaranteed)
 
 ---
 
-## 1. Executive Summary
-A comprehensive audit and systematic refactoring were executed across the PDFSmart Tools codebase. The system was audited against Google AdSense Publisher Policies, SEO technical standards, Core Web Vitals, accessibility guidelines, and client-side security architecture.
+## 1. Important Disclaimers & Scope of Verification
 
-All marketing claims, privacy documentation, tool functionalities, canonical linkages, and asset representations have been audited, corrected, and verified.
-
----
-
-## 2. Arabic/Persian Digit Safeguard Verification
-- **Issue:** Google AdSense and international search crawlers require consistent digit representation across English-language content. Arabic-Indic (`٠١٢٣٤٥٦٧٨٩`) or Eastern Arabic-Indic/Persian (`۰۱۲۳۴۵۶۷۸۹`) digits can cause indexing discrepancies in English locales.
-- **Audit Findings:** Automated regex scanning (`/[\u0660-\u0669\u06F0-\u06F9]/g`) verified zero instances in the codebase.
-- **Permanent Automated Safeguard:** 
-  - Created `scripts/verify-digits.js` which recursively scans all `.ts`, `.tsx`, `.js`, `.jsx`, `.html`, `.json`, and `.md` files in `src/`, `public/`, and project root.
-  - Added `"check:digits": "node scripts/verify-digits.js"` to `package.json`.
-  - Hooked `check:digits` directly into `npm run build` as a blocking pre-build validator.
+1. **Deployment Environment:** The production deployment target is Cloudflare Pages at `https://pdfsmart-tools.pages.dev/`. Cloudflare Workers preview deployments are obsolete and not used as canonical fallbacks.
+2. **Google AdSense Disclaimer:** AdSense acceptance cannot be guaranteed by any code audit or checklist. Google's review process evaluates domain history, organic search footprint, editorial uniqueness, traffic metrics, and discretionary editorial policies. This audit ensures technical hygiene, policy alignment, and honest presentation, but does not guarantee ad network approval.
+3. **Scope of Automated Node Testing:** The Node.js test suite directly imports and invokes pure-logic functions from `src/lib/pdfEngine.ts`. However, tools relying on HTML5 Canvas rasterization and browser-specific PDF.js worker execution cannot be fully validated in headless Node.js without real browser integration tests.
 
 ---
 
-## 3. Marketing Claims & Transparency Refinement
-- **Issue:** Exaggerated marketing claims such as "100% secure," "HIPAA compliant," "military-grade security," "free forever," and "guarantees total confidentiality" violate trust standards and risk AdSense review rejection.
-- **Audit & Remediation:**
-  - Audited `src/pages/HomePage.tsx`, `src/pages/ToolDetailPage.tsx`, `src/data/toolsData.ts`, `src/components/common/Footer.tsx`, and `src/pages/AboutPage.tsx`.
-  - Replaced absolute guarantees with technical, accurate explanations of client-side local memory processing (WebAssembly and HTML5 Canvas running entirely in device RAM without network uploads).
-  - Clarified compression behavior: explicitly documented that client-side canvas compression renders pages into high-efficiency visual images for maximum size reduction, and that text in compressed output is rendered visually.
-  - Password security is framed accurately around standard 128-bit PDF encryption specifications (`@pdfsmaller/pdf-encrypt-lite`), noting that client-side keys cannot be recovered by the site if forgotten.
+## 2. Testing Framework & Tool Verification Breakdown
+
+The automated test runner in `scripts/test-tools-suite.ts` directly imports and executes core functions from `src/lib/pdfEngine.ts`. The testing matrix distinguishes between what is directly verified in Node and what requires browser-level integration testing:
+
+### A. Direct Node Engine Tests (Imported from `src/lib/pdfEngine.ts`)
+The following routines are directly tested and verified in Node.js via `npm run test:tools`:
+- **`mergePdfs`:** Validates combining multiple independent PDF buffers, verifies merged page count, and validates PDF binary structure.
+- **`splitPdf`:** Validates splitting multi-page PDFs into individual documents packaged into a `.zip` archive via JSZip.
+- **`rotatePdf`:** Validates applying 90°, 180°, and 270° orientation adjustments to PDF page dictionaries.
+- **`deletePdfPages`:** Validates removing specified page indices (1-based) while preserving document integrity and remaining pages.
+- **`extractPdfPages`:** Validates extracting selected pages into a new clean PDF document.
+- **`protectPdf`:** Validates 128-bit encryption with user and owner passwords (`@pdfsmaller/pdf-encrypt-lite`) and verifies rejection of unauthenticated access.
+- **`watermarkPdf`:** Validates stamping text watermarks with custom opacity, rotation, and positioning onto PDF pages.
+- **`wordToPdf`:** Validates DOCX text parsing via Mammoth and PDF generation via pdf-lib.
+- **`pdfToWord`:** Validates text stream extraction via PDF.js and DOCX package compilation (`word/document.xml`) via docx.
+- **`sanitizeFilename`:** Validates stripping directory traversal (`../`), null bytes, reserved Windows device names (`CON`, `AUX`, `NUL`), and illegal characters.
+- **`parseAndValidatePageRanges`:** Validates parsing comma and hyphen ranges (e.g., `1-3, 5`), bounds checking, and non-numeric rejection.
+
+### B. Browser Integration Tests Still Required
+The following 5 tools rely on HTML5 Canvas rendering contexts (`getContext('2d')`), browser `Image` elements, or browser-only PDF.js Web Worker contexts and cannot be validated in Node without synthetic approximations:
+1. **`compressPdf`:** Re-encodes rendered canvas frames to JPEG byte streams with variable quality. Requires real browser execution for verification.
+2. **`pdfToJpg`:** Renders PDF pages to high-DPI HTML5 Canvas elements and extracts JPEG images. Requires real browser execution.
+3. **`pdfToPng`:** Renders PDF pages to canvas preserving transparency and exports PNG data URLs. Requires real browser execution.
+4. **`imagesToPdf`:** Loads image files into HTMLImageElement/Canvas for dimensions, rotation, and formatting before PDF assembly. Requires real browser execution.
+5. **`unlockPdf`:** Password removal for standard encryption is handled via pdf-lib; however, encrypted object stream fallbacks rely on canvas rendering. Requires real browser integration verification.
 
 ---
 
-## 4. Technical Functional Testing of All 15 PDF Tools
-A dedicated automated test runner suite was created in `scripts/test-tools-suite.ts` and `scripts/polyfill-dom.ts`, enabling direct execution via `npm run test:tools`. The test suite uses real PDF documents created in-memory and validates core routines against `pdfEngine.ts` directly in Node.js. All 21 assertions passed with zero failures:
+## 3. Canonical Domain Configuration & Precedence
 
-- **Automated Test Command:** `npm run test:tools`
-- **Results:** 21 Passed, 0 Failed.
+All site URLs, metadata, sitemaps, and robots directives are governed by a strict four-tier precedence model implemented in `src/config/siteConfig.ts` and build scripts:
 
-All 15 PDF processing routines in `src/lib/pdfEngine.ts` and UI handlers in `src/components/tools/ToolRunner.tsx` were tested and verified:
+1. `VITE_SITE_URL` (Environment variable)
+2. `SITE_URL` (Environment variable)
+3. `window.location.origin` (Client runtime browser detection)
+4. `https://pdfsmart-tools.pages.dev` (Final canonical fallback)
 
-1. **Merge PDF (`mergePdfs`):**
-   - Validated: Successfully combines multi-page PDFs in user-specified order using native `PDFDocument.copyPages` without rasterization.
-2. **Split PDF (`splitPdf`):**
-   - Validated: Supports individual page extraction, custom page ranges (e.g. `1-3, 5`), and fixed chunk splitting (`splitByEveryXPages`).
-3. **Compress PDF (`compressPdf`):**
-   - Validated: 3 compression profiles (`recommended`, `extreme`, `low`). Renders pages to canvas and recompresses JPEG streams with progress feedback.
-4. **PDF to JPG (`pdfToJpg`):**
-   - Validated: Multi-page high-DPI rendering via `pdfjs-dist` with ZIP batch export (`jszip`).
-5. **JPG to PDF (`imagesToPdf`):**
-   - Validated: Supports multiple images, auto-orientation, letter/A4 formats, and custom margins (`compact`, `standard`, `wide`).
-6. **PDF to Word (`pdfToWord`):**
-   - Validated: Full multi-page text extraction with line grouping and native `.docx` packaging via `docx` library.
-7. **Word to PDF (`wordToPdf`):**
-   - Validated: Mammoth extraction with ANSI direct embedding and Arabic/Unicode fallback canvas rendering.
-8. **PDF to PNG (`pdfToPng`):**
-   - Validated: Transparent canvas rendering with lossless PNG export and ZIP packaging.
-9. **PNG to PDF (`imagesToPdf`):**
-   - Validated: Flawless lossless PNG embedding with orientation detection.
-10. **Rotate PDF (`rotatePdf`):**
-    - Validated: Supports 90°, 180°, 270° clockwise and counterclockwise rotation for all or selected pages with angle normalization.
-11. **Delete PDF Pages (`deletePdfPages`):**
-    - Validated: Safe removal with guard preventing empty document generation.
-12. **Extract PDF Pages (`extractPdfPages`):**
-    - Validated: Range and individual page extraction with sorted indices.
-13. **Protect PDF (`protectPdf`):**
-    - Validated: Encrypts PDF using `@pdfsmaller/pdf-encrypt-lite` with user and owner passwords; verified load rejection on unauthorized access.
-14. **Unlock PDF (`unlockPdf`):**
-    - Validated: Decrypts password-protected PDFs and exports an unlocked copy; fallback rasterization handles encrypted object streams.
-15. **Watermark PDF (`watermarkPdf`):**
-    - Validated: Text and image watermarks, opacity control, rotation, layer positioning (`over` vs `under`), and page range targeting.
+The old Cloudflare Workers preview domain has been completely removed from all fallbacks, meta tags, sitemaps, robots.txt, and build scripts.
 
 ---
 
-## 5. Domain Centralization, Canonical Alignment & SEO
-- **Issue:** Hardcoded preview URLs in sitemaps and headers create domain fragmentation during domain migration.
-- **Audit & Remediation:**
-  - Centralized domain resolution in `src/config/siteConfig.ts` with precedence: `VITE_SITE_URL` / `SITE_URL` > `window.location.origin` > default domain.
-  - Created `scripts/generate-sitemap.js` which automatically builds `sitemap.xml` (all 28 routes) and `robots.txt` dynamically synchronized with the canonical URL.
-  - Integrated `scripts/generate-sitemap.js` into the build process for automatic generation in both `public/` and `dist/`.
-  - Replaced SVG placeholder in `public/logo.png` and `public/og-image.png` with true, high-resolution PNG binaries (512x512 and 1200x630).
-  - Dynamic JSON-LD structured data (`WebSite`, `Organization`, `SoftwareApplication`, `HowTo`, and `FAQPage`) dynamically bound to the centralized domain.
+## 4. Arabic and Persian Digit Safeguard
+
+To ensure consistent digit representation across English-language content, a permanent validator (`scripts/verify-digits.js`) is integrated into `npm run check:digits` and the pre-build pipeline. It recursively verifies that zero Eastern Arabic-Indic (`٠-٩`) or Persian (`۰-۹`) characters exist in user-facing routes and metadata.
 
 ---
 
-## 6. Legal & Trust Pages Comprehensive Review
-The following trust pages were audited and verified to meet Google AdSense requirements:
-- **Privacy Policy (`/privacy-policy`):**
-  - Explicit explanation of local browser memory processing without remote document uploads.
-  - Disclosure of operational assets (Google Fonts CDN, Mozilla PDF.js worker via unpkg).
-  - Explicit disclosure of EmailJS Contact API (only user-entered contact form fields are sent upon voluntary submission).
-  - Truth in advertising policy: explicitly notes that no active ads or Consent Management Platform (CMP) currently operate, and removed any unverified claims regarding IAB Europe TCF frameworks until live ad systems are approved.
-  - Clear limitation of warranty and recommendation to maintain backups of critical files.
-  - Transparent support contact email (`pdfsmarttools@gmail.com`).
-- **Terms of Service (`/terms`):**
-  - Fair use terms, disclaimer of warranties ("as is"), and intellectual property clauses.
-- **Cookie Policy (`/cookie-policy`):**
-  - Detailed breakdown of essential preferences, analytical data, and advertising cookies.
-- **Disclaimer (`/disclaimer`):**
-  - Educational and general-purpose use disclaimer, no legal advice guarantee, and backup reminder.
-- **About Us (`/about`):**
-  - Mission statement, zero-upload architecture explanation, and technical overview.
-- **Contact Us (`/contact`):**
-  - Working direct email card, instant copy button, and operational EmailJS support form.
+## 5. Marketing Claims & Technical Accuracy
+
+All user-facing copy was audited to eliminate exaggerated marketing claims:
+- Replaced unqualified terms ("100% secure," "military grade") with precise descriptions of local client-side processing in device RAM.
+- Accurately documented that canvas-based compression renders pages visually to reduce file size.
+- Documented encryption algorithms and noted that forgotten passwords cannot be recovered by the website due to zero-knowledge client-side execution.
 
 ---
 
-## 7. AdSense Readiness & AdSlot Architecture
-- **Compliance:** In accordance with user instructions, no dummy publisher IDs or fake advertisements are present.
-- **Architecture:** `src/components/common/AdSlot.tsx` provides 6 policy-compliant planned ad placements:
-  - `HOME_AD_TOP`
-  - `HOME_AD_BOTTOM`
-  - `TOOL_AD_AFTER_RESULT`
-  - `CONTENT_AD_BEFORE_RELATED`
-  - `SIDE_AD_LEFT`
-  - `SIDE_AD_RIGHT`
-- **Safe State:** When `adClient` and `adSlot` are unconfigured, `AdSlot` safely returns `null` with no layout shifts, blank rectangles, or policy-violating empty blocks.
+## 6. Static Site Generation (SSG) & SEO Output
+
+The production build pipeline generates 28 fully pre-rendered static HTML routes using `vite-react-ssg`:
+- `dist/index.html` (Homepage)
+- `dist/tools/index.html` (Tools directory)
+- 15 dedicated tool routes (`dist/tools/*/index.html`)
+- 1 guide directory and 4 in-depth guides (`dist/guides/*/index.html`)
+- 6 regulatory and company pages (`about`, `contact`, `privacy-policy`, `terms`, `cookie-policy`, `disclaimer`)
+
+Post-build validation (`prerender.js` and `scripts/generate-sitemap.js`) verifies that:
+- Every HTML file contains full pre-rendered static DOM inside `<div id="root">`.
+- `<link rel="canonical">` and `<meta property="og:url">` use the configured canonical domain (`https://pdfsmart-tools.pages.dev`).
+- `public/sitemap.xml` and `public/robots.txt` contain all 28 valid routes bound to `https://pdfsmart-tools.pages.dev/sitemap.xml`.
+- Zero references to obsolete preview domains exist in the generated build artifacts.
